@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     openai_base_url: str = "https://api.openai.com/v1"
 
     # Request settings
-    request_timeout_seconds: int = 30
+    request_timeout_seconds: int = 120
 
     # Logging settings
     log_level: str = "INFO"
