@@ -1,17 +1,22 @@
+x-ollama-model: &ollama_model gemma3:1b
+
 services:
   ai-gateway:
     build: .
     ports:
       - "8000:8000"
     environment:
-      - AI_PROVIDER=ollama
-      - AI_MODEL=gemma3:1b
-      - OLLAMA_BASE_URL=http://ollama:11434
-      - REQUEST_TIMEOUT_SECONDS=30
-      - LOG_LEVEL=INFO
-      - SERVICE_VERSION=0.1.0
+      AI_PROVIDER: ollama
+      AI_MODEL: *ollama_model
+      OLLAMA_BASE_URL: http://ollama:11434
+      REQUEST_TIMEOUT_SECONDS: 120
+      LOG_LEVEL: INFO
+      SERVICE_VERSION: 0.1.0
     depends_on:
-      - ollama
+      ollama:
+        condition: service_started
+      ollama-pull:
+        condition: service_completed_successfully
     networks:
       - ai-network
 
@@ -21,6 +26,24 @@ services:
       - "11434:11434"
     volumes:
       - ollama-data:/root/.ollama
+    gpus: all
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 5s
+    networks:
+      - ai-network
+
+  ollama-pull:
+    image: ollama/ollama:latest
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    command: ["pull", *ollama_model]
+    depends_on:
+      ollama:
+        condition: service_healthy
     networks:
       - ai-network
 
